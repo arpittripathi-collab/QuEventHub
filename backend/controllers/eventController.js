@@ -4,7 +4,12 @@ import Registration from '../models/Registration.js';
 export const getEvents = async (req, res) => {
   try {
     const { category } = req.query;
-    const query = {};
+    
+    const query = {
+
+      registrationDeadline: { $gte: new Date() } 
+    };
+
     if (category) {
       query.category = category;
     }
@@ -33,6 +38,14 @@ export const registerForEvent = async (req, res) => {
         .json({ success: false, message: 'Event not found' });
     }
 
+
+    if (new Date() > new Date(event.registrationDeadline)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Registration is closed for this event.' 
+      });
+    }
+
     const existingReg = await Registration.findOne({
       user: userId,
       event: eventId,
@@ -43,7 +56,6 @@ export const registerForEvent = async (req, res) => {
         .json({ success: false, message: 'Already registered' });
     }
 
- 
     if (!event.isPaid) {
       await Registration.create({
         user: userId,
@@ -56,6 +68,7 @@ export const registerForEvent = async (req, res) => {
         message: 'Successfully registered for free event!',
       });
     }
+    
     if (event.isPaid && !transactionId) {
       return res.status(200).json({
         success: true,
@@ -87,9 +100,8 @@ export const registerForEvent = async (req, res) => {
 export const getMyEvents = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const registrations = await Registration.find({ user: userId })
-      .populate('event', 'title date category isPaid organizer')
+      .populate('event', 'title date category isPaid organizer registrationDeadline')
       .sort({ registeredAt: -1 });
 
     res.status(200).json({
