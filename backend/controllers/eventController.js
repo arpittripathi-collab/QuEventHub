@@ -43,7 +43,7 @@ export const registerForEvent = async (req, res) => {
         .json({ success: false, message: 'Already registered' });
     }
 
-    // Free event: directly register
+ 
     if (!event.isPaid) {
       await Registration.create({
         user: userId,
@@ -56,8 +56,6 @@ export const registerForEvent = async (req, res) => {
         message: 'Successfully registered for free event!',
       });
     }
-
-    // Paid event but no transaction yet: send payment info
     if (event.isPaid && !transactionId) {
       return res.status(200).json({
         success: true,
@@ -68,7 +66,6 @@ export const registerForEvent = async (req, res) => {
       });
     }
 
-    // Paid event with transaction ID: create pending registration
     if (event.isPaid && transactionId) {
       await Registration.create({
         user: userId,
