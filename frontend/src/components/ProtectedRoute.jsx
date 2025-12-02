@@ -1,17 +1,41 @@
 // src/components/ProtectedRoute.jsx
-import React from 'react';
-// In a real application, this would use React Router and check authentication status
+import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
-const ProtectedRoute = ({ children, isAuthenticated, redirectTo = '/login' }) => {
-    if (!isAuthenticated) {
-        // In a real app, this would use navigate(redirectTo) from React Router
+const ProtectedRoute = ({ children }) => {
+    const [isChecking, setIsChecking] = useState(true);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    useEffect(() => {
+        // Check authentication
+        try {
+            const token = localStorage.getItem('token');
+            setIsAuthenticated(!!token);
+        } catch (error) {
+            console.error('Error checking authentication:', error);
+            setIsAuthenticated(false);
+        } finally {
+            setIsChecking(false);
+        }
+    }, []);
+
+    // Show loading state while checking
+    if (isChecking) {
         return (
-            <div className="p-8 text-center text-red-500">
-                Please <a href={redirectTo} className="text-indigo-600 underline">log in</a> to view this page.
+            <div className="flex justify-center items-center h-screen bg-gray-50">
+                <Loader2 className="animate-spin text-blue-600" size={40} />
             </div>
         );
     }
-    return children;
+
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // Render the protected component if authenticated
+    return <>{children}</>;
 };
 
 export default ProtectedRoute;

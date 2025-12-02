@@ -16,6 +16,10 @@ export default function Login() {
 
   const [error, setError] = useState("");
 
+  const handleInputFocus = (e) => {
+    e.target.focus();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -62,19 +66,26 @@ export default function Login() {
         <input
           type="text"
           placeholder="Q-ID, Email, or Phone"
-          className="p-3 border rounded"
+          className="p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           value={form.identifier}
           onChange={(e) => setForm({ ...form, identifier: e.target.value })}
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
           required
+          autoComplete="username"
+          autoFocus
         />
 
         <input
           type="password"
           placeholder="Password"
-          className="p-3 border rounded"
+          className="p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
           required
+          autoComplete="current-password"
         />
 
         <button

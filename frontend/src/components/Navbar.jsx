@@ -1,614 +1,287 @@
-// import { useState, useEffect } from "react";
-// import { Link, useNavigate } from "react-router-dom";
-// import { motion, AnimatePresence } from "framer-motion";
-// import { Menu, X, ChevronDown } from "lucide-react";
-
-// export default function Navbar() {
-//   const [mobileOpen, setMobileOpen] = useState(false);
-//   const [dropdown, setDropdown] = useState(null);
-//   const [loggedIn, setLoggedIn] = useState(false);
-
-//   const navigate = useNavigate();
-
-//   // Check login state
-//   useEffect(() => {
-//     const token = localStorage.getItem("token");
-//     setLoggedIn(!!token);
-//   }, []);
-
-//   // Logout functionality
-//   const handleLogout = () => {
-//     localStorage.removeItem("token");
-//     setLoggedIn(false);
-//     navigate("/login");
-//   };
-
-//   const dropdownItems = {
-//     Events: ["Seminars", "Workshops", "Fest", "Sports"],
-//     Clubs: ["Tech Club", "Music Club", "Dance Club", "Literary Club"],
-//   };
-
-//   return (
-//     <nav className="bg-slate-900 text-white px-6 py-4 shadow-lg">
-//       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        
-//         {/* Logo */}
-//         <h2 className="text-2xl font-bold">Campus Event Hub</h2>
-
-//         {/* Desktop Menu */}
-//         <ul className="hidden md:flex gap-8 items-center text-lg">
-
-//           <NavItem title="Home" link="/" />
-
-//           <DropdownMenu
-//             title="Events"
-//             dropdown={dropdown}
-//             setDropdown={setDropdown}
-//             items={dropdownItems.Events}
-//             link="/events"
-//           />
-
-//           <DropdownMenu
-//             title="Clubs"
-//             dropdown={dropdown}
-//             setDropdown={setDropdown}
-//             items={dropdownItems.Clubs}
-//             link="/clubs"
-//           />
-
-//           <NavItem title="Contact" link="/contact" />
-
-//           {/* Show Admin Panel only if logged in */}
-//           {loggedIn && (
-//             <NavItem title="Admin Panel" link="/admin" />
-//           )}
-
-//           {/* Login / Logout Button */}
-//           {!loggedIn ? (
-//             <button
-//               onClick={() => navigate("/login")}
-//               className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition"
-//             >
-//               Login
-//             </button>
-//           ) : (
-//             <button
-//               onClick={handleLogout}
-//               className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
-//             >
-//               Logout
-//             </button>
-//           )}
-//         </ul>
-
-//         {/* Mobile Menu Toggle Button */}
-//         <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden">
-//           {mobileOpen ? <X size={30} /> : <Menu size={30} />}
-//         </button>
-//       </div>
-
-//       {/* Mobile Panel */}
-//       <AnimatePresence>
-//         {mobileOpen && (
-//           <motion.div
-//             initial={{ height: 0 }}
-//             animate={{ height: "auto" }}
-//             exit={{ height: 0 }}
-//             className="md:hidden bg-slate-800 p-4 rounded-lg mt-3"
-//           >
-//             <MobileMenu
-//               dropdownItems={dropdownItems}
-//               loggedIn={loggedIn}
-//               handleLogout={handleLogout}
-//               navigate={navigate}
-//               setMobileOpen={setMobileOpen}
-//             />
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-//     </nav>
-//   );
-// }
-
-// /* ===== Helper Components ===== */
-
-// function NavItem({ title, link }) {
-//   return (
-//     <li>
-//       <Link to={link} className="hover:text-blue-400 transition font-medium">
-//         {title}
-//       </Link>
-//     </li>
-//   );
-// }
-
-// function DropdownMenu({ title, dropdown, setDropdown, items, link }) {
-//   return (
-//     <li
-//       className="relative"
-//       onMouseEnter={() => setDropdown(title)}
-//       onMouseLeave={() => setDropdown(null)}
-//     >
-//       <Link to={link} className="flex items-center gap-1 hover:text-blue-400">
-//         {title} <ChevronDown size={18} />
-//       </Link>
-
-//       <AnimatePresence>
-//         {dropdown === title && (
-//           <motion.ul
-//             initial={{ opacity: 0, y: -10 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             exit={{ opacity: 0, y: -10 }}
-//             className="absolute bg-slate-800 mt-2 p-3 rounded-lg shadow-lg w-40"
-//           >
-//             {items.map((item) => (
-//               <li key={item} className="py-1">
-//                 <Link className="hover:text-blue-400" to="#">
-//                   {item}
-//                 </Link>
-//               </li>
-//             ))}
-//           </motion.ul>
-//         )}
-//       </AnimatePresence>
-//     </li>
-//   );
-// }
-
-// function MobileMenu({ dropdownItems, loggedIn, handleLogout, navigate, setMobileOpen }) {
-//   return (
-//     <ul className="flex flex-col gap-4 text-lg">
-      
-//       <NavItem title="Home" link="/" />
-//       <MobileDropdown title="Events" items={dropdownItems.Events} link="/events" />
-//       <MobileDropdown title="Clubs" items={dropdownItems.Clubs} link="/clubs" />
-//       <NavItem title="Contact" link="/contact" />
-
-//       {loggedIn && <NavItem title="Admin Panel" link="/admin" />}
-
-//       {!loggedIn ? (
-//         <button
-//           onClick={() => { navigate("/login"); setMobileOpen(false); }}
-//           className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg"
-//         >
-//           Login
-//         </button>
-//       ) : (
-//         <button
-//           onClick={() => { handleLogout(); setMobileOpen(false); }}
-//           className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
-//         >
-//           Logout
-//         </button>
-//       )}
-//     </ul>
-//   );
-// }
-
-// function MobileDropdown({ title, items, link }) {
-//   const [open, setOpen] = useState(false);
-
-//   return (
-//     <li>
-//       <div className="flex gap-2 items-center">
-//         <Link to={link} className="flex-1 hover:text-blue-400 font-medium">
-//           {title}
-//         </Link>
-
-//         <button onClick={() => setOpen(!open)}>
-//           <ChevronDown />
-//         </button>
-//       </div>
-
-//       <AnimatePresence>
-//         {open && (
-//           <motion.ul
-//             initial={{ opacity: 0 }}
-//             animate={{ opacity: 1 }}
-//             exit={{ opacity: 0 }}
-//             className="ml-4 mt-2"
-//           >
-//             {items.map((item) => (
-//               <li key={item} className="py-1">
-//                 <Link className="hover:text-blue-400" to="#">
-//                   {item}
-//                 </Link>
-//               </li>
-//             ))}
-//           </motion.ul>
-//         )}
-//       </AnimatePresence>
-//     </li>
-//   );
-// }
-
-
-
-// // src/components/Navbar.jsx
-// import { useState, useEffect } from "react";
-// import { Link, useNavigate } from "react-router-dom";
-// import { motion, AnimatePresence } from "framer-motion";
-// import { Menu, X, ChevronDown } from "lucide-react";
-
-// // Assuming these are the categories your backend supports for filtering
-// const dropdownItems = {
-//   Events: ["Seminars", "Workshops", "Fest", "Sports", "Technical", "Cultural"],
-//   Clubs: ["Tech Club", "Music Club", "Dance Club", "Literary Club"],
-// };
-
-// export default function Navbar() {
-//   const [mobileOpen, setMobileOpen] = useState(false);
-//   const [dropdown, setDropdown] = useState(null);
-//   const [loggedIn, setLoggedIn] = useState(false);
-
-//   const navigate = useNavigate();
-
-//   // Check login state
-//   useEffect(() => {
-//     const token = localStorage.getItem("token");
-//     setLoggedIn(!!token);
-//   }, []);
-
-//   // Logout functionality
-//   const handleLogout = () => {
-//     localStorage.removeItem("token");
-//     setLoggedIn(false);
-//     navigate("/login");
-//   };
-
-//   return (
-//     <nav className="bg-slate-900 text-white px-6 py-4 shadow-lg sticky top-0 z-50">
-//       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        
-//         {/* Logo */}
-//         <Link to="/">
-//           <h2 className="text-2xl font-bold hover:text-blue-400 transition">Campus Event Hub</h2>
-//         </Link>
-
-//         {/* Desktop Menu */}
-//         <ul className="hidden md:flex gap-8 items-center text-lg">
-
-//           <NavItem title="Home" link="/" />
-
-//           <DropdownMenu
-//             title="Events"
-//             dropdown={dropdown}
-//             setDropdown={setDropdown}
-//             items={dropdownItems.Events}
-//             link="/events"
-//           />
-
-//           <NavItem title="Clubs" link="/clubs" />
-
-//           <NavItem title="Contact" link="/contact" />
-
-//           {/* Show Admin Panel only if logged in */}
-//           {loggedIn && (
-//             <NavItem title="Admin Panel" link="/admin" />
-//           )}
-
-//           {/* Login / Logout Button */}
-//           {!loggedIn ? (
-//             <button
-//               onClick={() => navigate("/login")}
-//               className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition"
-//             >
-//               Login
-//             </button>
-//           ) : (
-//             <button
-//               onClick={handleLogout}
-//               className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
-//             >
-//               Logout
-//             </button>
-//           )}
-//         </ul>
-
-//         {/* Mobile Menu Toggle Button */}
-//         <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden">
-//           {mobileOpen ? <X size={30} /> : <Menu size={30} />}
-//         </button>
-//       </div>
-
-//       {/* Mobile Panel */}
-//       <AnimatePresence>
-//         {mobileOpen && (
-//           <motion.div
-//             initial={{ height: 0 }}
-//             animate={{ height: "auto" }}
-//             exit={{ height: 0 }}
-//             className="md:hidden bg-slate-800 p-4 rounded-lg mt-3 overflow-hidden"
-//           >
-//             <MobileMenu
-//               dropdownItems={dropdownItems}
-//               loggedIn={loggedIn}
-//               handleLogout={handleLogout}
-//               navigate={navigate}
-//               setMobileOpen={setMobileOpen}
-//             />
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-//     </nav>
-//   );
-// }
-
-// /* ===== Helper Components ===== */
-
-// function NavItem({ title, link }) {
-//   return (
-//     <li>
-//       <Link to={link} className="hover:text-blue-400 transition font-medium">
-//         {title}
-//       </Link>
-//     </li>
-//   );
-// }
-
-// function DropdownMenu({ title, dropdown, setDropdown, items, link }) {
-//   return (
-//     <li
-//       className="relative"
-//       onMouseEnter={() => setDropdown(title)}
-//       onMouseLeave={() => setDropdown(null)}
-//     >
-//       <Link to={link} className="flex items-center gap-1 hover:text-blue-400">
-//         {title} <ChevronDown size={18} />
-//       </Link>
-
-//       <AnimatePresence>
-//         {dropdown === title && (
-//           <motion.ul
-//             initial={{ opacity: 0, y: -10 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             exit={{ opacity: 0, y: -10 }}
-//             className="absolute bg-slate-800 mt-2 p-3 rounded-lg shadow-lg w-40 z-10"
-//           >
-//             {items.map((item) => (
-//               <li key={item} className="py-1">
-//                 {/* Links to events page with category filter applied */}
-//                 <Link className="hover:text-blue-400" to={`/events?category=${item}`}>
-//                   {item}
-//                 </Link>
-//               </li>
-//             ))}
-//           </motion.ul>
-//         )}
-//       </AnimatePresence>
-//     </li>
-//   );
-// }
-
-// function MobileMenu({ dropdownItems, loggedIn, handleLogout, navigate, setMobileOpen }) {
-//   return (
-//     <ul className="flex flex-col gap-4 text-lg">
-      
-//       <NavItem title="Home" link="/" />
-//       <MobileDropdown title="Events" items={dropdownItems.Events} link="/events" />
-//       <NavItem title="Clubs" link="/clubs" />
-//       <NavItem title="Contact" link="/contact" />
-
-//       {loggedIn && <NavItem title="Admin Panel" link="/admin" />}
-
-//       {!loggedIn ? (
-//         <button
-//           onClick={() => { navigate("/login"); setMobileOpen(false); }}
-//           className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg"
-//         >
-//           Login
-//         </button>
-//       ) : (
-//         <button
-//           onClick={() => { handleLogout(); setMobileOpen(false); }}
-//           className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
-//         >
-//           Logout
-//         </button>
-//       )}
-//     </ul>
-//   );
-// }
-
-// function MobileDropdown({ title, items, link }) {
-//   const [open, setOpen] = useState(false);
-
-//   return (
-//     <li>
-//       <div className="flex gap-2 items-center">
-//         <Link to={link} className="flex-1 hover:text-blue-400 font-medium">
-//           {title}
-//         </Link>
-
-//         <button onClick={() => setOpen(!open)}>
-//           <ChevronDown className={open ? 'transform rotate-180 transition' : 'transition'}/>
-//         </button>
-//       </div>
-
-//       <AnimatePresence>
-//         {open && (
-//           <motion.ul
-//             initial={{ height: 0, opacity: 0 }}
-//             animate={{ height: "auto", opacity: 1 }}
-//             exit={{ height: 0, opacity: 0 }}
-//             className="ml-4 mt-2 overflow-hidden"
-//           >
-//             {items.map((item) => (
-//               <li key={item} className="py-1">
-//                 <Link className="hover:text-blue-400" to={`/events?category=${item}`}>
-//                   {item}
-//                 </Link>
-//               </li>
-//             ))}
-//           </motion.ul>
-//         )}
-//       </AnimatePresence>
-//     </li>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+/* eslint-disable no-unused-vars */
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { 
+  Menu, 
+  X, 
+  ChevronDown, 
+  LogOut, 
+  User, 
+  Calendar, 
+  Users, 
+  Home, 
+  Phone 
+} from "lucide-react";
 
 const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  
+  const navigate = useNavigate();
+
+  // Handle Scroll Effect
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Check Authentication
+  useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const token = localStorage.getItem("token");
+        setLoggedIn(!!token);
+      } catch (error) {
+        console.error('Error checking auth in Navbar:', error);
+        setLoggedIn(false);
+      }
+    };
+    checkAuth();
+    
+    try {
+      window.addEventListener('storage', checkAuth);
+      // Also check periodically for same-tab changes
+      const interval = setInterval(checkAuth, 1000);
+      return () => {
+        window.removeEventListener('storage', checkAuth);
+        clearInterval(interval);
+      };
+    } catch (error) {
+      console.error('Error setting up Navbar auth listeners:', error);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setLoggedIn(false);
+      setProfileOpen(false);
+      setMobileMenuOpen(false);
+      navigate("/login");
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still navigate even if localStorage fails
+      navigate("/login");
+    }
+  };
 
   return (
-    <nav className="bg-[#0b1a33] text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        
-        {/* Logo */}
-        <Link to="/" className="text-2xl font-bold tracking-wide">
-          Campus Event Hub
-        </Link>
+    <>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled 
+            ? "bg-[#0b1a33]/90 backdrop-blur-md shadow-lg py-3" 
+            : "bg-[#0b1a33] py-4"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+          
+          {/* Logo */}
+          <Link to="/" className="text-2xl font-bold text-white tracking-wide flex items-center gap-2">
+            <span className="bg-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">Q</span>
+            CampusHub
+          </Link>
 
-        {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center space-x-8 text-lg">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8">
+            <NavLink to="/">Home</NavLink>
+            
+            {/* Events Dropdown */}
+            <FlyoutLink 
+              title="Events" 
+              items={[
+                { name: "Seminars", href: "/events?type=seminars" },
+                { name: "Workshops", href: "/events?type=workshops" },
+                { name: "Fests", href: "/events?type=fest" },
+                { name: "Sports", href: "/events?type=sports" },
+              ]}
+            />
 
-          {/* Home */}
-          <li>
-            <Link to="/" className="hover:text-blue-400">Home</Link>
-          </li>
+            {/* Clubs Dropdown */}
+            <FlyoutLink 
+              title="Clubs" 
+              items={[
+                { name: "Technical", href: "/clubs?type=technical" },
+                { name: "Cultural", href: "/clubs?type=cultural" },
+                { name: "Arts", href: "/clubs?type=arts" },
+              ]}
+            />
 
-          {/* EVENTS DROPDOWN */}
-          <li className="relative group cursor-pointer">
-            <span className="hover:text-blue-400 flex items-center gap-1">
-              Events
-              <svg className="w-4 h-4 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </span>
+            <NavLink to="/contact">Contact</NavLink>
+          </div>
 
-            {/* Dropdown on Hover */}
-            <div className="absolute left-0 mt-3 hidden group-hover:block bg-[#0d1b2a] 
-                            text-white rounded-lg shadow-lg w-44 py-2 z-50">
+          {/* Desktop Auth Buttons */}
+          <div className="hidden md:flex items-center gap-4">
+            {!loggedIn ? (
+              <Link
+                to="/login"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-medium transition-all shadow-md hover:shadow-blue-500/20"
+              >
+                Login
+              </Link>
+            ) : (
+              <div className="relative">
+                <button 
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center gap-2 text-white hover:text-blue-300 transition"
+                >
+                  <div className="w-9 h-9 bg-gray-700 rounded-full flex items-center justify-center border-2 border-transparent hover:border-blue-400 transition">
+                    <User size={18} />
+                  </div>
+                </button>
 
-              <Link to="/events?type=seminars" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Seminars
-              </Link>
-              <Link to="/events?type=workshops" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Workshops
-              </Link>
-              <Link to="/events?type=fest" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Fest
-              </Link>
-              <Link to="/events?type=sports" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Sports
-              </Link>
-              <Link to="/events?type=technical" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Technical
-              </Link>
-              <Link to="/events?type=cultural" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Cultural
-              </Link>
+                <AnimatePresence>
+                  {profileOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 15 }}
+                      className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl py-2 overflow-hidden text-gray-800"
+                    >
+                      <Link to="/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 transition">
+                        <User size={16} /> Profile
+                      </Link>
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full text-left flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 transition"
+                      >
+                        <LogOut size={16} /> Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Toggle */}
+          <button 
+            className="md:hidden text-white"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "100vh" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="fixed inset-0 top-[60px] bg-[#0b1a33] z-40 md:hidden overflow-y-auto"
+          >
+            <div className="flex flex-col p-6 gap-4 text-white">
+              <MobileNavLink to="/" onClick={() => setMobileMenuOpen(false)} icon={<Home size={20} />}>Home</MobileNavLink>
+              
+              <div className="py-2 border-t border-gray-700">
+                <p className="text-gray-400 text-sm mb-2 uppercase tracking-wider">Explore</p>
+                <MobileNavLink to="/events" onClick={() => setMobileMenuOpen(false)} icon={<Calendar size={20} />}>All Events</MobileNavLink>
+                <MobileNavLink to="/clubs" onClick={() => setMobileMenuOpen(false)} icon={<Users size={20} />}>All Clubs</MobileNavLink>
+              </div>
+
+              <MobileNavLink to="/contact" onClick={() => setMobileMenuOpen(false)} icon={<Phone size={20} />}>Contact</MobileNavLink>
+
+              <div className="mt-4 pt-4 border-t border-gray-700">
+                {!loggedIn ? (
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center w-full bg-blue-600 py-3 rounded-lg font-bold"
+                  >
+                    Login to Account
+                  </Link>
+                ) : (
+                  <div className="space-y-3">
+                    <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 p-2 bg-gray-800 rounded-lg">
+                      <User size={20} className="text-blue-400" /> My Profile
+                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full p-2 bg-red-600/10 text-red-400 rounded-lg"
+                    >
+                      <LogOut size={20} /> Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </li>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
 
-          {/* CLUBS DROPDOWN (Requested) */}
-          <li className="relative group cursor-pointer">
-            <span className="hover:text-blue-400 flex items-center gap-1">
-              Clubs
-              <svg className="w-4 h-4 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </span>
+/* --- Helper Components --- */
 
-            {/* Dropdown */}
-            <div className="absolute left-0 mt-3 hidden group-hover:block bg-[#0d1b2a] 
-                            text-white rounded-lg shadow-lg w-44 py-2 z-50">
+const NavLink = ({ to, children }) => (
+  <Link to={to} className="text-gray-300 hover:text-white font-medium transition-colors">
+    {children}
+  </Link>
+);
 
-              <Link to="/clubs?type=technical" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Technical Clubs
-              </Link>
+const MobileNavLink = ({ to, children, onClick, icon }) => (
+  <Link 
+    to={to} 
+    onClick={onClick}
+    className="flex items-center gap-4 text-xl font-medium p-2 hover:bg-white/5 rounded-lg transition"
+  >
+    {icon} {children}
+  </Link>
+);
 
-              <Link to="/clubs?type=cultural" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Cultural Clubs
-              </Link>
+const FlyoutLink = ({ title, items }) => {
+  const [open, setOpen] = useState(false);
 
-              <Link to="/clubs?type=sports" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Sports Clubs
-              </Link>
+  return (
+    <div 
+      onMouseEnter={() => setOpen(true)} 
+      onMouseLeave={() => setOpen(false)} 
+      className="relative h-fit w-fit"
+    >
+      <button className="flex items-center gap-1 text-gray-300 hover:text-white font-medium transition-colors">
+        {title}
+        <ChevronDown 
+          size={16} 
+          className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`} 
+        />
+      </button>
 
-              <Link to="/clubs?type=arts" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Arts Clubs
-              </Link>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 15 }}
+            className="absolute left-1/2 -translate-x-1/2 top-8 bg-white text-black rounded-lg shadow-xl p-4 w-48 border border-gray-100"
+          >
+            {/* Tiny triangle pointing up */}
+            <div className="absolute -top-2 left-0 right-0 h-4 bg-transparent" /> 
+            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45" />
 
-              <Link to="/clubs?type=music" className="block px-4 py-2 hover:bg-[#1b263b]">
-                Music Clubs
-              </Link>
+            <div className="relative z-10 flex flex-col gap-2">
+              {items.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="block p-2 text-sm hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors"
+                >
+                  {item.name}
+                </Link>
+              ))}
             </div>
-          </li>
-
-          {/* Contact */}
-          <li>
-            <Link to="/contact" className="hover:text-blue-400">
-              Contact
-            </Link>
-          </li>
-
-          {/* Login */}
-          <li>
-            <Link
-              to="/login"
-              className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg transition"
-            >
-              Login
-            </Link>
-          </li>
-        </ul>
-
-        {/* Mobile Button */}
-        <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          <svg className="w-7 h-7" fill="none" stroke="white" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <ul className="md:hidden bg-[#0b1a33] text-white px-6 pb-5 space-y-4 text-lg">
-          <li><Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link></li>
-
-          <li><Link to="/events" onClick={() => setIsMenuOpen(false)}>Events</Link></li>
-
-          <li><Link to="/clubs" onClick={() => setIsMenuOpen(false)}>Clubs</Link></li>
-
-          <li><Link to="/contact" onClick={() => setIsMenuOpen(false)}>Contact</Link></li>
-
-          <li>
-            <Link
-              to="/login"
-              onClick={() => setIsMenuOpen(false)}
-              className="bg-blue-500 block text-center py-2 rounded-lg"
-            >
-              Login
-            </Link>
-          </li>
-        </ul>
-      )}
-    </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 

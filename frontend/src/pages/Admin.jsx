@@ -225,6 +225,10 @@ const EventForm = ({ event, onClose, onSave }) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleInputFocus = (e) => {
+        e.target.focus();
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         onSave(formData);
@@ -245,8 +249,11 @@ const EventForm = ({ event, onClose, onSave }) => {
                         placeholder="Event Title"
                         value={formData.title}
                         onChange={handleChange}
+                        onFocus={handleInputFocus}
+                        onClick={handleInputFocus}
                         required
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                        autoFocus
                     />
                     <div className="flex space-x-4">
                         <input
@@ -254,8 +261,10 @@ const EventForm = ({ event, onClose, onSave }) => {
                             name="date"
                             value={formData.date}
                             onChange={handleChange}
+                            onFocus={handleInputFocus}
+                            onClick={handleInputFocus}
                             required
-                            className="w-1/2 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                            className="w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
                         />
                         <input
                             type="number"
@@ -263,16 +272,20 @@ const EventForm = ({ event, onClose, onSave }) => {
                             placeholder="Capacity"
                             value={formData.capacity}
                             onChange={handleChange}
+                            onFocus={handleInputFocus}
+                            onClick={handleInputFocus}
                             min="1"
                             required
-                            className="w-1/2 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                            className="w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
                         />
                     </div>
                     <select
                         name="status"
                         value={formData.status}
                         onChange={handleChange}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                        onFocus={handleInputFocus}
+                        onClick={handleInputFocus}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
                     >
                         <option value="Open">Open</option>
                         <option value="Filling">Filling</option>

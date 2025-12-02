@@ -20,7 +20,7 @@ const Events = () => {
     try {
       const query = selectedCategory !== "All" ? `?category=${selectedCategory}` : "";
       const res = await api.get(`/events${query}`);
-      setEvents(res.data.data); // Adjusting based on backend format { data: [...] }
+      setEvents(res.data.data || res.data || []); // Handle both response formats
     } catch (error) {
       console.error("Error fetching events:", error);
       setEvents([]);

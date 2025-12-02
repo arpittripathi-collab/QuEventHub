@@ -1,55 +1,216 @@
-// import React from 'react'
-
-// const Contact = () => {
-//   return (
-//     <h1 className="text-3xl font-bold">Contact Page</h1>
-//   )
-// }
-
-// export default Contact
-
-
-
-// src/pages/Contact.jsx
-import React from 'react'
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Send, 
+  Loader2, 
+  CheckCircle, 
+  AlertCircle, 
+  User, 
+  MessageSquare 
+} from 'lucide-react';
+import api from '../api';
 
 const Contact = () => {
-  return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
-        <h1 className="text-4xl font-extrabold text-center text-slate-800 mb-4">Get In Touch</h1>
-        <p className="text-center text-gray-600 mb-10">We're here to help! Reach out to us for any event or club-related inquiries.</p>
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: ""
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-        <div className="grid md:grid-cols-3 gap-8 text-center mb-10">
-          <div className="p-4 rounded-lg bg-blue-50">
-            <Mail size={36} className="text-blue-600 mx-auto mb-3" />
-            <h3 className="font-bold text-lg">Email Us</h3>
-            <p className="text-sm text-gray-600">info@campuseventhub.com</p>
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setMessage("");
+    setError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const res = await api.post("/contact", formData);
+      
+      if (res.data.success) {
+        setMessage(res.data.message || "Thank you for your message! We'll get back to you soon.");
+        setFormData({ name: "", email: "", message: "" });
+      } else {
+        setError(res.data.message || "Failed to send message. Please try again.");
+      }
+    } catch (err) {
+      console.error("Contact form error:", err);
+      setError(
+        err.response?.data?.message || 
+        "Failed to send your message. Please try again later."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+        
+        {/* Left Side: Contact Information (Dark/Gradient Background) */}
+        <div className="w-full md:w-2/5 bg-gradient-to-br from-blue-600 to-indigo-800 p-10 text-white flex flex-col justify-between">
+          <div>
+            <h2 className="text-3xl font-extrabold mb-4">Get In Touch</h2>
+            <p className="text-blue-100 mb-8 leading-relaxed">
+              Have questions about an event or club? We'd love to hear from you. Fill out the form and we'll be in touch shortly.
+            </p>
+            
+            <div className="space-y-6">
+              <div className="flex items-start space-x-4">
+                <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
+                  <Mail size={24} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Email</h3>
+                  <p className="text-blue-100 text-sm">info@campuseventhub.com</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
+                  <Phone size={24} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Phone</h3>
+                  <p className="text-blue-100 text-sm">+1 (555) 123-4567</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
+                  <MapPin size={24} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Office</h3>
+                  <p className="text-blue-100 text-sm">Campus Central, Building A<br/>Room 304</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-lg bg-green-50">
-            <Phone size={36} className="text-green-600 mx-auto mb-3" />
-            <h3 className="font-bold text-lg">Call Us</h3>
-            <p className="text-sm text-gray-600">+1 (555) 123-4567</p>
-          </div>
-          <div className="p-4 rounded-lg bg-red-50">
-            <MapPin size={36} className="text-red-600 mx-auto mb-3" />
-            <h3 className="font-bold text-lg">Visit Us</h3>
-            <p className="text-sm text-gray-600">Campus Central, Building A</p>
+
+          <div className="mt-12 md:mt-0">
+             {/* Decorative circles or additional branding can go here */}
+             <div className="flex gap-4 opacity-50">
+                <div className="w-3 h-3 rounded-full bg-white"></div>
+                <div className="w-3 h-3 rounded-full bg-white"></div>
+                <div className="w-3 h-3 rounded-full bg-white"></div>
+             </div>
           </div>
         </div>
 
-        <form className="space-y-6">
-          <input type="text" placeholder="Your Name" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required />
-          <input type="email" placeholder="Your Email" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required />
-          <textarea rows="4" placeholder="Your Message" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required></textarea>
-          <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold flex items-center justify-center hover:bg-blue-700 transition">
-            <Send size={20} className="mr-2"/> Send Message
-          </button>
-        </form>
+        {/* Right Side: Contact Form (White Background) */}
+        <div className="w-full md:w-3/5 p-10 bg-white">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Send us a Message</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Name Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input 
+                  type="text" 
+                  name="name"
+                  placeholder="John Doe" 
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                  required 
+                  autoComplete="name"
+                />
+              </div>
+            </div>
+
+            {/* Email Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input 
+                  type="email" 
+                  name="email"
+                  placeholder="you@example.com" 
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                  required 
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+
+            {/* Message Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+              <div className="relative">
+                <div className="absolute top-3 left-3 pointer-events-none">
+                  <MessageSquare className="h-5 w-5 text-gray-400" />
+                </div>
+                <textarea 
+                  rows="4" 
+                  name="message"
+                  placeholder="How can we help you?" 
+                  value={formData.message}
+                  onChange={handleChange}
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none" 
+                  required
+                ></textarea>
+              </div>
+            </div>
+
+            {/* Success Message */}
+            {message && (
+              <div className="bg-green-50 border border-green-200 p-4 rounded-lg flex items-center animate-fade-in">
+                <CheckCircle className="text-green-500 mr-3" size={20} />
+                <p className="text-green-700 font-medium text-sm">{message}</p>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex items-center animate-fade-in">
+                <AlertCircle className="text-red-500 mr-3" size={20} />
+                <p className="text-red-700 font-medium text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-bold shadow-lg transform transition-all hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={20} className="mr-2 animate-spin" /> Sending...
+                </>
+              ) : (
+                <>
+                  <Send size={20} className="mr-2"/> Send Message
+                </>
+              )}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Contact
+export default Contact;

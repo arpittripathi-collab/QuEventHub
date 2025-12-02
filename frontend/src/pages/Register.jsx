@@ -1,4 +1,3 @@
-// pages/Register.jsx
 import { useState } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +6,13 @@ import { Loader2 } from "lucide-react";
 export default function Register() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1: Register, 2: Verify OTP
-  const [formData, setFormData] = useState({});
+  
+  const [formData, setFormData] = useState({
+    name: "", email: "", phone: "", q_id: "", 
+    course: "", year: "", section: "", 
+    password: "", confirmPassword: ""
+  });
+  
   const [otpData, setOtpData] = useState({ userId: null, emailOtp: "", phoneOtp: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -17,71 +22,14 @@ export default function Register() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Step 1: Handle Registration
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setMessage("");
-    try {
-      const res = await api.post("/auth/register", formData);
-      setOtpData({ ...otpData, userId: res.data.userId });
-      setMessage(res.data.message);
-      setStep(2);
-    } catch (err) {
-      setError(err.response?.data?.errors || err.response?.data?.message || "Registration failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Step 2: Handle OTP Verification
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setMessage("");
-
-    // Verify Email OTP
-    try {
-      if (otpData.emailOtp) {
-        const emailRes = await api.post("/auth/verify", {
-          userId: otpData.userId,
-          otp: otpData.emailOtp,
-          type: "email",
-        });
-        setMessage(emailRes.data.message);
-        if (emailRes.data.status === "fully_verified") {
-            localStorage.setItem("token", emailRes.data.token);
-            navigate("/"); // Redirect to home after full verification
-            return;
-        }
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Email verification failed.");
-      setLoading(false);
-      return;
-    }
-    
-    // Verify Phone OTP
-    try {
-        if (otpData.phoneOtp) {
-            const phoneRes = await api.post("/auth/verify", {
-                userId: otpData.userId,
-                otp: otpData.phoneOtp,
-                type: "phone",
-            });
-            setMessage(phoneRes.data.message);
-            if (phoneRes.data.status === "fully_verified") {
-                localStorage.setItem("token", phoneRes.data.token);
-                navigate("/"); // Redirect to home after full verification
-            }
-        }
-    } catch (err) {
-        setError(err.response?.data?.message || "Phone verification failed.");
-    } finally {
-      setLoading(false);
-    }
+  // Helper to save data and redirect
+  const handleLoginSuccess = (data) => {
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user || {}));
+    setMessage("Verification Complete! Redirecting...");
+    setTimeout(() => {
+        navigate("/");
+    }, 1000);
   };
 
   const handleResend = async (type) => {
@@ -95,65 +43,210 @@ export default function Register() {
     }
   };
 
-  const RegistrationForm = () => (
-    <form onSubmit={handleRegister} className="flex flex-col gap-3">
-        {/* Input fields for name, email, password, etc. */}
-        <input name="name" type="text" placeholder="Full Name" onChange={handleChange} required className="p-3 border rounded" />
-        <input name="email" type="email" placeholder="Email" onChange={handleChange} required className="p-3 border rounded" />
-        <input name="phone" type="tel" placeholder="Phone Number" onChange={handleChange} required className="p-3 border rounded" />
-        <input name="q_id" type="text" placeholder="Q-ID (8 digits)" onChange={handleChange} required className="p-3 border rounded" />
-        <input name="course" type="text" placeholder="Course" onChange={handleChange} required className="p-3 border rounded" />
-        <input name="year" type="text" placeholder="Year" onChange={handleChange} required className="p-3 border rounded" />
-        <input name="section" type="text" placeholder="Section" onChange={handleChange} required className="p-3 border rounded" />
-        <input name="password" type="password" placeholder="Password" onChange={handleChange} required className="p-3 border rounded" />
-        <input name="confirmPassword" type="password" placeholder="Confirm Password" onChange={handleChange} required className="p-3 border rounded" />
-        
-        <button type="submit" disabled={loading} className="bg-green-600 text-white p-3 rounded flex justify-center items-center">
-            {loading ? <Loader2 size={20} className="animate-spin" /> : "Register & Send OTP"}
-        </button>
-    </form>
-  );
+  // Step 1: Handle Registration
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
 
-  const VerificationForm = () => (
-    <form onSubmit={handleVerify} className="flex flex-col gap-4">
-        <h3 className="text-xl font-semibold mt-4">Email Verification</h3>
-        <input 
-            type="text" 
-            placeholder="Email OTP" 
-            value={otpData.emailOtp} 
-            onChange={(e) => setOtpData({ ...otpData, emailOtp: e.target.value })} 
-            className="p-3 border rounded" 
-        />
-        <button type="button" onClick={() => handleResend('email')} className="text-sm text-blue-500 hover:text-blue-700">Resend Email OTP</button>
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
 
-        <h3 className="text-xl font-semibold mt-4">Phone Verification</h3>
-        <input 
-            type="text" 
-            placeholder="Phone OTP" 
-            value={otpData.phoneOtp} 
-            onChange={(e) => setOtpData({ ...otpData, phoneOtp: e.target.value })} 
-            className="p-3 border rounded" 
-        />
-        <button type="button" onClick={() => handleResend('phone')} className="text-sm text-blue-500 hover:text-blue-700">Resend Phone OTP</button>
+    try {
+      const res = await api.post("/auth/register", formData);
+      setOtpData(prev => ({ ...prev, userId: res.data.userId }));
+      setMessage(res.data.message || "Registration successful! Please check your Email and WhatsApp.");
+      setStep(2);
+    } catch (err) {
+      const msg = err.response?.data?.message || 
+                  err.response?.data?.errors || 
+                  err.response?.data?.error || 
+                  "Registration failed.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        <button type="submit" disabled={loading} className="bg-blue-600 text-white p-3 rounded flex justify-center items-center mt-6">
-            {loading ? <Loader2 size={20} className="animate-spin" /> : "Verify Account"}
-        </button>
-    </form>
-  );
+  // Step 2: Handle OTP Verification
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    if (!otpData.emailOtp && !otpData.phoneOtp) {
+      setError("Please enter at least one OTP.");
+      setLoading(false);
+      return;
+    }
+
+    let successMessages = [];
+
+    try {
+      // 1. Verify Email OTP
+      if (otpData.emailOtp) {
+        try {
+          const res = await api.post("/auth/verify", {
+            userId: otpData.userId,
+            otp: otpData.emailOtp,
+            type: "email",
+          });
+          successMessages.push("Email Verified");
+          
+          if (res.data.status === "fully_verified") {
+             handleLoginSuccess(res.data);
+             return; 
+          }
+        } catch {
+          // Removed unused "innerErr" variable here
+          setError(prev => (prev ? prev + " | " : "") + "Email OTP Invalid");
+        }
+      }
+
+      // 2. Verify Phone OTP
+      if (otpData.phoneOtp) {
+        try {
+          const res = await api.post("/auth/verify", {
+            userId: otpData.userId,
+            otp: otpData.phoneOtp,
+            type: "phone",
+          });
+          successMessages.push("Phone Verified");
+
+          if (res.data.status === "fully_verified") {
+             handleLoginSuccess(res.data);
+             return;
+          }
+        } catch {
+           // Removed unused "innerErr" variable here
+          setError(prev => (prev ? prev + " | " : "") + "Phone OTP Invalid");
+        }
+      }
+
+      if (successMessages.length > 0) {
+        setMessage(successMessages.join(" & ") + " Successfully!");
+      }
+
+    } catch {
+      setError("Verification process failed. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="p-10 max-w-lg mx-auto bg-white shadow-xl rounded-xl my-10">
-      <h2 className="text-4xl font-extrabold mb-6 text-center text-slate-800">
-        Student {step === 1 ? "Registration" : "Verification"}
-      </h2>
-      
-      {error && <p className="text-red-500 bg-red-100 p-3 rounded mb-4">{error}</p>}
-      {message && <p className="text-green-600 bg-green-100 p-3 rounded mb-4">{message}</p>}
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-lg bg-white shadow-xl rounded-xl p-8">
+            <h2 className="text-3xl font-bold mb-6 text-center text-slate-800">
+                {step === 1 ? "Student Registration" : "Verify Account"}
+            </h2>
+            
+            {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded mb-4 text-sm">
+                    <strong>Error: </strong> {error}
+                </div>
+            )}
+            {message && (
+                <div className="bg-green-50 border border-green-200 text-green-600 p-3 rounded mb-4 text-sm">
+                    <strong>Success: </strong> {message}
+                </div>
+            )}
 
-      {step === 1 ? <RegistrationForm /> : <VerificationForm />}
+            {step === 1 ? (
+                <form onSubmit={handleRegister} className="flex flex-col gap-3">
+                    <input 
+                      name="name" type="text" placeholder="Full Name" required 
+                      value={formData.name} onChange={handleChange} 
+                      className="p-3 border rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                    />
+                    <input 
+                      name="email" type="email" placeholder="Email" required 
+                      value={formData.email} onChange={handleChange} 
+                      className="p-3 border rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                    />
+                    <input 
+                      name="phone" type="tel" placeholder="Phone Number" required 
+                      value={formData.phone} onChange={handleChange} 
+                      className="p-3 border rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                    />
+                    <div className="flex gap-2">
+                        <input 
+                          name="q_id" type="text" placeholder="Q-ID" required 
+                          value={formData.q_id} onChange={handleChange} 
+                          className="p-3 border rounded w-1/2 focus:ring-2 focus:ring-green-500 outline-none" 
+                        />
+                        <input 
+                          name="section" type="text" placeholder="Section" required 
+                          value={formData.section} onChange={handleChange} 
+                          className="p-3 border rounded w-1/2 focus:ring-2 focus:ring-green-500 outline-none" 
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <input 
+                          name="course" type="text" placeholder="Course" required 
+                          value={formData.course} onChange={handleChange} 
+                          className="p-3 border rounded w-1/2 focus:ring-2 focus:ring-green-500 outline-none" 
+                        />
+                        <input 
+                          name="year" type="text" placeholder="Year" required 
+                          value={formData.year} onChange={handleChange} 
+                          className="p-3 border rounded w-1/2 focus:ring-2 focus:ring-green-500 outline-none" 
+                        />
+                    </div>
+                    <input 
+                      name="password" type="password" placeholder="Password" required 
+                      value={formData.password} onChange={handleChange} 
+                      className="p-3 border rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                    />
+                    <input 
+                      name="confirmPassword" type="password" placeholder="Confirm Password" required 
+                      value={formData.confirmPassword} onChange={handleChange} 
+                      className="p-3 border rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                    />
+                    
+                    <button type="submit" disabled={loading} className="bg-green-600 text-white p-3 rounded flex justify-center items-center hover:bg-green-700 transition">
+                        {loading ? <Loader2 size={20} className="animate-spin" /> : "Register & Send OTP"}
+                    </button>
+                </form>
+            ) : (
+                <form onSubmit={handleVerify} className="flex flex-col gap-4">
+                    <div className="bg-slate-50 p-4 rounded border">
+                        <h3 className="text-lg font-semibold mb-2">Email Verification</h3>
+                        <input 
+                            type="text" placeholder="Enter Email OTP" 
+                            value={otpData.emailOtp} 
+                            onChange={(e) => setOtpData({ ...otpData, emailOtp: e.target.value })} 
+                            className="w-full p-3 border rounded focus:ring-2 focus:ring-blue-500 outline-none" 
+                        />
+                        <button type="button" onClick={() => handleResend('email')} className="text-sm text-blue-500 hover:text-blue-700 mt-2">
+                            Resend Email OTP
+                        </button>
+                    </div>
+
+                    <div className="bg-slate-50 p-4 rounded border">
+                        <h3 className="text-lg font-semibold mb-2">Phone Verification (WhatsApp)</h3>
+                        <input 
+                            type="text" placeholder="Enter Phone OTP" 
+                            value={otpData.phoneOtp} 
+                            onChange={(e) => setOtpData({ ...otpData, phoneOtp: e.target.value })} 
+                            className="w-full p-3 border rounded focus:ring-2 focus:ring-blue-500 outline-none" 
+                        />
+                        <button type="button" onClick={() => handleResend('phone')} className="text-sm text-blue-500 hover:text-blue-700 mt-2">
+                            Resend Phone OTP
+                        </button>
+                    </div>
+
+                    <button type="submit" disabled={loading} className="bg-blue-600 text-white p-3 rounded flex justify-center items-center mt-2 hover:bg-blue-700 transition">
+                        {loading ? <Loader2 size={20} className="animate-spin" /> : "Verify & Complete Registration"}
+                    </button>
+                </form>
+            )}
+        </div>
     </div>
   );
 }
-
-

@@ -13,15 +13,32 @@
 
 
 import express from 'express';
-import { getMyEvents } from '../controllers/eventController.js';
-// 👈 You must add getMyEvents to this line 
-import { getEvents, registerForEvent} from '../controllers/eventController.js';
+import { getEvents, registerForEvent, getMyEvents } from '../controllers/eventController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import Event from '../models/Event.js';
 
 const router = express.Router();
 
-// ... (rest of your routes)
+// Get all events (public route, no auth required)
+router.get('/', getEvents);
 
-router.get('/myevents', protect, getMyEvents); // <-- Now defined!
+// Get single event by ID (public route)
+router.get('/:id', async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+    res.status(200).json({ success: true, data: event });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Register for event (protected route)
+router.post('/register', protect, registerForEvent);
+
+// Get user's registered events (protected route)
+router.get('/myevents', protect, getMyEvents);
 
 export default router;

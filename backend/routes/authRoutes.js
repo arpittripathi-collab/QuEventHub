@@ -10,6 +10,5 @@ router.post('/verify', verifyUser);
 router.post('/resend', resendOtp);
 router.post('/forgot-password',forgotPassword);
 router.post('/reset-password',resetPassword);
-// router.put('/profile', protect, updateUserProfile);
 
 export default router;

@@ -45,7 +45,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000",  // Correct backend URL
+  baseURL: "http://localhost:5000/api",  // Backend API base URL with /api prefix
   headers: {
     "Content-Type": "application/json",
   },
@@ -54,13 +54,54 @@ const api = axios.create({
 // Attach JWT token automatically
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Error accessing localStorage in request interceptor:', error);
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Handle authentication errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle network errors
+    if (!error.response) {
+      console.error('Network error:', error.message);
+      return Promise.reject({
+        ...error,
+        message: 'Network error. Please check your connection.',
+        isNetworkError: true
+      });
+    }
+
+    // Handle authentication errors
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      try {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        console.log("Authentication failed - token cleared");
+      } catch (storageError) {
+        console.error('Error clearing storage:', storageError);
+      }
+    }
+
+    // Handle server errors
+    if (error.response?.status >= 500) {
+      console.error('Server error:', error.response?.data);
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 // ----------------------

@@ -323,13 +323,17 @@ export const updateUserProfile = async (req, res) => {
   try {
     const updates = { ...req.body };
 
+    // Prevent updating email, phone, password, and verification status
     delete updates.email;
-    delete updates.phoneNumber;
+    delete updates.phone;
     delete updates.password;
     delete updates.isVerified; 
+    delete updates.emailOtp;
+    delete updates.phoneOtp;
+    delete updates.otpExpiry;
 
     const updatedUser = await UserModel.findByIdAndUpdate(
-      req.user.id,
+      req.user._id,
       updates,
       { 
         new: true, 
@@ -349,6 +353,6 @@ export const updateUserProfile = async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server error updating profile' });
+    res.status(500).json({ success: false, message: 'Server error updating profile', error: error.message });
   }
 };

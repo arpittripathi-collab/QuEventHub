@@ -175,6 +175,10 @@ export default function EventDetail() {
   const [regStatus, setRegStatus] = useState({ state: 'idle', message: '' }); 
   const [transactionId, setTransactionId] = useState("");
 
+  const handleInputFocus = (e) => {
+    e.target.focus();
+  };
+
   useEffect(() => {
     fetchEvent();
   }, [id]);
@@ -183,7 +187,7 @@ export default function EventDetail() {
     setLoading(true);
     try {
       const res = await api.get(`/events/${id}`);
-      setEvent(res.data);
+      setEvent(res.data.data || res.data); // Handle both response formats
     } catch (error) {
       console.error("Error fetching event:", error);
       navigate('/events');
@@ -297,7 +301,10 @@ export default function EventDetail() {
                             placeholder="Enter Transaction ID after payment"
                             value={transactionId}
                             onChange={(e) => setTransactionId(e.target.value)}
-                            className="w-full p-2 border rounded mb-3"
+                            onFocus={handleInputFocus}
+                            onClick={handleInputFocus}
+                            className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            autoFocus
                         />
                     </div>
                 )}

@@ -8,6 +8,10 @@ const AdminClubs = () => {
   const [form, setForm] = useState({ name: "", category: "technical", description: "", meeting: "", time: "", venue: "" });
   const { idToken } = useContext(AuthContext);
 
+  const handleInputFocus = (e) => {
+    e.target.focus();
+  };
+
   const fetchClubs = async () => {
     const res = await api.get("/clubs");
     setClubs(res.data.data);
@@ -51,18 +55,61 @@ const AdminClubs = () => {
       <h2 className="text-2xl mb-4">Admin — Manage Clubs</h2>
 
       <form onSubmit={form.id ? handleUpdate : handleCreate} className="grid gap-2 grid-cols-1 md:grid-cols-2 mb-6">
-        <input placeholder="Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="p-2 border rounded" required />
-        <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="p-2 border rounded">
+        <input 
+          placeholder="Name" 
+          value={form.name} 
+          onChange={e => setForm({...form, name: e.target.value})} 
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
+          className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" 
+          required 
+          autoFocus
+        />
+        <select 
+          value={form.category} 
+          onChange={e => setForm({...form, category: e.target.value})} 
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
+          className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+        >
           <option value="technical">Technical</option>
           <option value="cultural">Cultural</option>
           <option value="sports">Sports</option>
           <option value="arts">Arts</option>
           <option value="music">Music</option>
         </select>
-        <input placeholder="Meeting" value={form.meeting} onChange={e => setForm({...form, meeting: e.target.value})} className="p-2 border rounded" />
-        <input placeholder="Time" value={form.time} onChange={e => setForm({...form, time: e.target.value})} className="p-2 border rounded" />
-        <input placeholder="Venue" value={form.venue} onChange={e => setForm({...form, venue: e.target.value})} className="p-2 border rounded" />
-        <textarea placeholder="Description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="p-2 border rounded md:col-span-2"></textarea>
+        <input 
+          placeholder="Meeting" 
+          value={form.meeting} 
+          onChange={e => setForm({...form, meeting: e.target.value})} 
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
+          className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" 
+        />
+        <input 
+          placeholder="Time" 
+          value={form.time} 
+          onChange={e => setForm({...form, time: e.target.value})} 
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
+          className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" 
+        />
+        <input 
+          placeholder="Venue" 
+          value={form.venue} 
+          onChange={e => setForm({...form, venue: e.target.value})} 
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
+          className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" 
+        />
+        <textarea 
+          placeholder="Description" 
+          value={form.description} 
+          onChange={e => setForm({...form, description: e.target.value})} 
+          onFocus={handleInputFocus}
+          onClick={handleInputFocus}
+          className="p-2 border rounded md:col-span-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+        ></textarea>
 
         <div className="md:col-span-2 flex gap-2">
           <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">{form.id ? "Update" : "Create"}</button>

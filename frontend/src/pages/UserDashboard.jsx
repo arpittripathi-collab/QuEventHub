@@ -14,7 +14,7 @@ export default function UserDashboard() {
   // Fetch User Profile Using Token
   const fetchProfile = async () => {
     try {
-      const res = await api.get("/user/me"); // <-- You must add this backend route
+      const res = await api.get("/user/me");
       setUser(res.data.user);
     } catch (err) {
       console.log("Auth Error:", err);
@@ -36,9 +36,10 @@ export default function UserDashboard() {
   const fetchEvents = async () => {
     try {
       const res = await api.get("/events");
-      setEvents(res.data);
+      setEvents(res.data.data || res.data || []);
     } catch (err) {
       console.log(err);
+      setEvents([]);
     }
   };
 

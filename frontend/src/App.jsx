@@ -53,54 +53,80 @@
 
 
 // src/App.jsx
-import React from "react";
+import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import Home from "./pages/Home";
 import Events from "./pages/Events";
-import EventDetail from "./pages/EventDetail"; // NEW
+import EventDetail from "./pages/EventDetail";
 import Clubs from "./pages/Clubs";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
-import Register from "./pages/Register"; // NEW
+import Register from "./pages/Register";
 import Admin from "./pages/Admin";
-import ClubDetails from "./pages/ClubDetails"; // NEW
+import ClubDetails from "./pages/ClubDetails";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex justify-center items-center h-screen bg-gray-50">
+    <Loader2 className="animate-spin text-blue-600" size={48} />
+  </div>
+);
 
 export default function App() {
   return (
-    <>
+    <ErrorBoundary>
       {/* NAVBAR ALWAYS VISIBLE */}
-      <Navbar />
+      <ErrorBoundary>
+        <Navbar />
+      </ErrorBoundary>
 
       {/* PAGES */}
       <div className="min-h-screen">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/events/:id" element={<EventDetail />} /> {/* Dynamic route for event details */}
-          <Route path="/clubs" element={<Clubs />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/clubs/:id" element={<ClubDetails />} />
-
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/events/:id" element={<EventDetail />} />
+            <Route path="/clubs" element={<Clubs />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/clubs/:id" element={<ClubDetails />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
+            {/* Catch-all route for 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </div>
 
       {/* FOOTER ALWAYS VISIBLE */}
-      <Footer />
-    </>
+      <ErrorBoundary>
+        <Footer />
+      </ErrorBoundary>
+    </ErrorBoundary>
   );
 }
