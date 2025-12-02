@@ -10,7 +10,11 @@ const registrationSchema = new mongoose.Schema({
     default: 'Registered' 
   },
   transactionId: { type: String }, 
-  registeredAt: { type: Date, default: Date.now }
+  registeredAt: { type: Date, default: Date.now },
+
+  // Attendance tracking – marked by club on event day
+  attended: { type: Boolean, default: false },
+  attendedAt: { type: Date },
 });
 
 const registrationModel = mongoose.model('Registration', registrationSchema);

@@ -1,4 +1,4 @@
-import bg from "../assets/bg.jpg";
+import bg from "../assets/QUimage.jpg";
 
 export default function Home() {
   return (

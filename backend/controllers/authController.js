@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import UserModel from '../models/usersModel.js';
+import Club from '../models/Club.js';
 import { registerSchema, verifySchema, resendSchema, loginSchema, forgotSchema, resetSchema } from '../validators/authValidations.js';
 import jwt from 'jsonwebtoken';
 import { generateOTP, sendEmailOTP, sendPhoneOTP } from '../utils/notification.js';
@@ -23,7 +24,8 @@ export const register = async (req, res) => {
             password: hashedPassword,
             emailOtp,
             phoneOtp,
-            otpExpiry
+            otpExpiry,
+            role: 'student'
         });
         if (!user) {
             return res.status(400).json({
@@ -59,9 +61,11 @@ export const login = async (req, res) => {
 
         const { identifier, password } = result.data;
         if (!identifier || !password) {
-            return res.status(400).json({ message: "Please provide Q-ID/Email/Phone and password" });
+            return res.status(400).json({ message: "Please provide Q-ID/Email/Phone or Club ID and password" });
         }
-        const user = await UserModel.findOne({
+
+        // --- 1. Try to authenticate as regular user (student/admin) ---
+        let user = await UserModel.findOne({
             $or: [
                 { email: identifier },
                 { phone: identifier },
@@ -69,35 +73,69 @@ export const login = async (req, res) => {
             ]
         });
 
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
+        if (user) {
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(400).json({ message: "Invalid credentials" });
+            }
+
+            if (!user.isVerified) {
+                return res.status(403).json({
+                    message: "Account not verified. Please verify your details.",
+                    isVerified: false,
+                    userId: user._id
+                });
+            }
+
+            const token = jwt.sign(
+                { id: user._id, role: user.role || "student" },
+                process.env.JWT_SECRET,
+                { expiresIn: '1d' }
+            );
+            return res.status(200).json({
+                message: "Login successful",
+                token,
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    q_id: user.q_id,
+                    email: user.email,
+                    role: user.role || 'student'
+                }
+            });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
+        // --- 2. Fallback: authenticate as club using clubId or contactEmail ---
+        const club = await Club.findOne({
+            $or: [
+                { clubId: identifier },
+                { contactEmail: identifier.toLowerCase() }
+            ]
+        });
+
+        if (!club) {
+            return res.status(404).json({ message: "User or club not found" });
+        }
+
+        const clubMatch = await bcrypt.compare(password, club.passwordHash);
+        if (!clubMatch) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        if (!user.isVerified) {
-            return res.status(403).json({
-                message: "Account not verified. Please verify your details.",
-                isVerified: false,
-                userId: user._id
-            });
-        }
         const token = jwt.sign(
-            { id: user._id, role: "student" },
+            { id: club._id, role: 'club' },
             process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
+
         return res.status(200).json({
             message: "Login successful",
             token,
             user: {
-                id: user._id,
-                name: user.name,
-                q_id: user.q_id,
-                email: user.email
+                id: club._id,
+                name: club.name,
+                clubId: club.clubId,
+                role: 'club'
             }
         });
 

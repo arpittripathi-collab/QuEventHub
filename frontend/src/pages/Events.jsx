@@ -1,89 +1,238 @@
-// // pages/Events.jsx
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import api from "../api";
-import { Loader2 } from "lucide-react";
+import { 
+  Loader2, 
+  Search, 
+  MapPin, 
+  Clock, 
+  CalendarDays, 
+  Filter,
+  Tag
+} from "lucide-react";
 
-const categories = ["All", "Technical", "Cultural", "Sports", "Workshop"];
+const categories = ["All", "Technical", "Cultural", "Sports", "Workshop", "Seminar", "Fest"];
 
 const Events = () => {
   const [events, setEvents] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Sync selectedCategory with URL query changes
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const newCategory = params.get("category") || "All";
+    setSelectedCategory((prev) => (newCategory !== prev ? newCategory : prev));
+  }, [location.search]);
+
+  // Fetch events
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const categoryQuery = selectedCategory !== "All" ? `category=${selectedCategory}` : "";
+        const res = await api.get(`/events?${categoryQuery}`);
+        const fetchedEvents = res.data.data || res.data || [];
+        setEvents(fetchedEvents);
+        setFilteredEvents(fetchedEvents);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchEvents();
   }, [selectedCategory]);
 
-  const fetchEvents = async () => {
-    setLoading(true);
-    try {
-      const query = selectedCategory !== "All" ? `?category=${selectedCategory}` : "";
-      const res = await api.get(`/events${query}`);
-      setEvents(res.data.data || res.data || []); // Handle both response formats
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      setEvents([]);
-    } finally {
-      setLoading(false);
+  // Handle Search Filtering (Client-side for better performance on small datasets)
+  useEffect(() => {
+    if (!searchTerm) {
+        setFilteredEvents(events);
+    } else {
+        const lowerSearch = searchTerm.toLowerCase();
+        const filtered = events.filter(event => 
+            event.title.toLowerCase().includes(lowerSearch) || 
+            event.description.toLowerCase().includes(lowerSearch) ||
+            event.venue?.toLowerCase().includes(lowerSearch)
+        );
+        setFilteredEvents(filtered);
     }
+  }, [searchTerm, events]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    const newParams = new URLSearchParams();
+    if (cat !== "All") {
+        newParams.set('category', cat);
+    }
+    window.history.pushState(null, '', `/events?${newParams.toString()}`);
+  }
+
+  // Helper to format date nicely
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return {
+        day: date.getDate(),
+        month: date.toLocaleString('default', { month: 'short' }).toUpperCase(),
+        full: date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    };
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-6">
-      <h1 className="text-4xl font-bold text-center mb-8 text-blue-700">
-        Upcoming Campus Events
-      </h1>
-
-      {/* Category Filter */}
-      <div className="max-w-6xl mx-auto mb-8 flex justify-center flex-wrap gap-3">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-full font-medium transition ${
-              selectedCategory === cat
-                ? "bg-blue-600 text-white shadow-lg"
-                : "bg-white text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      
+      {/* Page Header */}
+      <div className="text-center mb-12 mt-5">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
+          Explore Campus <span className="text-blue-600">Events</span>
+        </h1>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Discover workshops, competitions, and cultural fests happening around you.
+        </p>
       </div>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          <div className="md:col-span-2 lg:col-span-3 text-center py-10">
-            <Loader2 size={36} className="animate-spin text-blue-500 mx-auto" />
-            <p className="mt-2 text-gray-600">Loading events...</p>
-          </div>
-        ) : events.length === 0 ? (
-          <div className="md:col-span-2 lg:col-span-3 text-center py-10 text-gray-500">
-            No events found in this category.
-          </div>
-        ) : (
-          events.map((event) => (
-            <div
-              key={event._id}
-              className="bg-white shadow-lg rounded-xl p-6 hover:shadow-2xl transition-shadow"
-            >
-              <h2 className="text-2xl font-semibold text-gray-800">{event.title}</h2>
-
-              <div className="mt-3 text-gray-600">
-                <p><span className="font-semibold">🏷️ Category:</span> {event.category}</p>
-                <p><span className="font-semibold">📅 Date:</span> {new Date(event.date).toLocaleDateString()}</p>
-                <p><span className="font-semibold">⏰ Time:</span> {event.time}</p>
-                <p><span className="font-semibold">📍 Venue:</span> {event.venue}</p>
-              </div>
-
-              <p className="mt-4 text-gray-700 line-clamp-3">{event.description}</p>
-
-              <Link to={`/events/${event._id}`} className="mt-5 w-full block text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
-                View Details
-              </Link>
+      {/* Search and Filter Section */}
+      <div className="max-w-7xl mx-auto mb-12 space-y-6">
+        
+        {/* Search Bar */}
+        <div className="relative max-w-lg mx-auto">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
             </div>
-          ))
+            <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-full leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all"
+                placeholder="Search events by name, venue..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+        </div>
+
+        {/* Category Chips */}
+        <div className="flex flex-wrap justify-center gap-2">
+            {categories.map((cat) => (
+                <button
+                    key={cat}
+                    onClick={() => handleCategoryChange(cat)}
+                    className={`px-5 py-2 rounded-full text-sm font-medium transition-all transform hover:scale-105 ${
+                        selectedCategory === cat
+                            ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-2"
+                            : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                    }`}
+                >
+                    {cat}
+                </button>
+            ))}
+        </div>
+      </div>
+
+      {/* Events Grid */}
+      <div className="max-w-7xl mx-auto">
+        {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 size={48} className="animate-spin text-blue-600 mb-4" />
+                <p className="text-gray-500 font-medium">Loading upcoming events...</p>
+            </div>
+        ) : filteredEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border border-gray-100 p-10">
+                <div className="bg-gray-100 p-4 rounded-full mb-4">
+                    <Filter className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">No events found</h3>
+                <p className="text-gray-500 max-w-sm">
+                    We couldn't find any events matching your criteria. Try selecting a different category or clearing your search.
+                </p>
+                <button 
+                    onClick={() => { setSearchTerm(""); handleCategoryChange("All"); }}
+                    className="mt-6 text-blue-600 font-medium hover:underline"
+                >
+                    Clear all filters
+                </button>
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredEvents.map((event) => {
+                    const dateInfo = formatDate(event.date);
+                    
+                    return (
+                        <div 
+                            key={event._id} 
+                            className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full"
+                        >
+                            {/* Card Image Area */}
+                            <div className="relative h-48 bg-gray-200 overflow-hidden">
+                                {event.imageUrl || event.image?.path ? (
+                                    <img 
+                                        src={event.imageUrl || event.image?.path} 
+                                        alt={event.title} 
+                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                        <CalendarDays className="text-white/30 w-16 h-16" />
+                                    </div>
+                                )}
+                                
+                                {/* Date Badge */}
+                                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-2 text-center shadow-lg min-w-[60px]">
+                                    <div className="text-xs font-bold text-blue-600 uppercase tracking-wide">{dateInfo.month}</div>
+                                    <div className="text-2xl font-extrabold text-gray-900 leading-none">{dateInfo.day}</div>
+                                </div>
+
+                                {/* Category Badge */}
+                                <div className="absolute top-4 left-4">
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white backdrop-blur-md">
+                                        {event.category}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Content Area */}
+                            <div className="p-6 flex flex-col flex-grow">
+                                <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                                    {event.title}
+                                </h2>
+                                
+                                <div className="space-y-2 mb-4">
+                                    <div className="flex items-center text-sm text-gray-500">
+                                        <Clock className="w-4 h-4 mr-2 text-blue-500" />
+                                        <span>{event.time || "Time TBD"}</span>
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-500">
+                                        <MapPin className="w-4 h-4 mr-2 text-red-500" />
+                                        <span className="truncate">{event.venue || "Venue TBD"}</span>
+                                    </div>
+                                </div>
+
+                                <p className="text-gray-600 text-sm line-clamp-3 mb-6 flex-grow">
+                                    {event.description}
+                                </p>
+
+                                <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs text-gray-400 font-medium uppercase">Price</span>
+                                        <span className={`text-sm font-bold ${event.isPaid ? "text-green-600" : "text-gray-900"}`}>
+                                            {event.isPaid ? `₹${event.price}` : "Free"}
+                                        </span>
+                                    </div>
+                                    
+                                    <Link 
+                                        to={`/events/${event._id}`} 
+                                        className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm hover:shadow-md"
+                                    >
+                                        View Details
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         )}
       </div>
     </div>
@@ -91,228 +240,3 @@ const Events = () => {
 };
 
 export default Events;
-
-
-
-
-
-
-// // src/pages/Events.jsx
-// import React, { useEffect, useState } from "react";
-// import { Link, useLocation } from "react-router-dom";
-// import api from "../api";
-// import { Loader2, Calendar, MapPin, Tag } from "lucide-react";
-
-// const categories = ["All", "Technical", "Cultural", "Sports", "Workshop", "Seminar", "Fest"];
-
-// const Events = () => {
-//   const [events, setEvents] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const location = useLocation();
-  
-//   // Read category from URL query parameters (e.g., /events?category=Fest)
-//   const queryParams = new URLSearchParams(location.search);
-//   const initialCategory = queryParams.get('category') || "All";
-//   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-
-//   useEffect(() => {
-//     // Update category state if URL changes outside of button click
-//     const newCategory = queryParams.get('category') || "All";
-//     if (newCategory !== selectedCategory) {
-//         setSelectedCategory(newCategory);
-//     }
-//   }, [location.search]);
-
-//   useEffect(() => {
-//     fetchEvents();
-//   }, [selectedCategory]);
-
-//   const fetchEvents = async () => {
-//     setLoading(true);
-//     try {
-//       // API call includes category filter if not "All"
-//       const categoryQuery = selectedCategory !== "All" ? `category=${selectedCategory}` : "";
-//       const res = await api.get(`/events?${categoryQuery}`);
-//       setEvents(res.data.data); 
-//     } catch (error) {
-//       console.error("Error fetching events:", error);
-//       setEvents([]);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-  
-//   const handleCategoryChange = (cat) => {
-//     setSelectedCategory(cat);
-//     // Update URL to reflect filter change for persistent state
-//     const newParams = new URLSearchParams();
-//     if (cat !== "All") {
-//         newParams.set('category', cat);
-//     }
-//     window.history.pushState(null, '', `/events?${newParams.toString()}`);
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-100 py-10 px-6">
-//       <h1 className="text-4xl font-bold text-center mb-8 text-blue-700">
-//         Upcoming Campus Events
-//       </h1>
-
-//       {/* Category Filter */}
-//       <div className="max-w-6xl mx-auto mb-8 flex justify-center flex-wrap gap-3">
-//         {categories.map((cat) => (
-//           <button
-//             key={cat}
-//             onClick={() => handleCategoryChange(cat)}
-//             className={`px-4 py-2 rounded-full font-medium text-sm transition ${
-//               selectedCategory === cat
-//                 ? "bg-blue-600 text-white shadow-lg"
-//                 : "bg-white text-gray-700 hover:bg-gray-200 border"
-//             }`}
-//           >
-//             {cat}
-//           </button>
-//         ))}
-//       </div>
-
-//       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//         {loading ? (
-//           <div className="md:col-span-2 lg:col-span-3 text-center py-10">
-//             <Loader2 size={36} className="animate-spin text-blue-500 mx-auto" />
-//             <p className="mt-2 text-gray-600">Loading events...</p>
-//           </div>
-//         ) : events.length === 0 ? (
-//           <div className="md:col-span-2 lg:col-span-3 text-center py-10 text-gray-500">
-//             No events found in the selected category.
-//           </div>
-//         ) : (
-//           events.map((event) => (
-//             <div
-//               key={event._id}
-//               className="bg-white shadow-lg rounded-xl p-6 flex flex-col hover:shadow-2xl transition-shadow"
-//             >
-//                 {event.image && (
-//                     <img src={event.image.path} alt={event.title} className="w-full h-40 object-cover rounded-lg mb-4" />
-//                 )}
-//               <h2 className="text-2xl font-semibold text-gray-800">{event.title}</h2>
-
-//               <div className="mt-3 text-sm text-gray-600 space-y-1">
-//                 <p className="flex items-center gap-2"><Tag size={16} className="text-blue-500"/> <span className="font-semibold">Category:</span> {event.category}</p>
-//                 <p className="flex items-center gap-2"><Calendar size={16} className="text-blue-500"/> <span className="font-semibold">Date:</span> {new Date(event.date).toLocaleDateString()}</p>
-//                 <p className="flex items-center gap-2"><MapPin size={16} className="text-blue-500"/> <span className="font-semibold">Venue:</span> {event.venue}</p>
-//               </div>
-
-//               <p className="mt-4 text-gray-700 line-clamp-3 flex-1">{event.description}</p>
-
-//               <Link to={`/events/${event._id}`} className="mt-5 w-full block text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
-//                 View Details
-//               </Link>
-//             </div>
-//           ))
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Events;
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // src/pages/Events.jsx
-// import React from 'react';
-// import { Users, Calendar } from 'lucide-react';
-// import DashboardButton from '../components/DashboardButton.jsx';
-
-// // --- StudentDashboard Component ---
-// const Events = ({ events, user, setRegisteredEvents }) => {
-//     const isRegistered = (eventId) => user.registeredEvents.includes(eventId);
-
-//     const handleRegister = (eventId) => {
-//         // Registration logic (POST to /api/events/register)
-//         setRegisteredEvents(prev => {
-//             const newEvents = new Set(prev);
-//             newEvents.add(eventId);
-//             return Array.from(newEvents);
-//         });
-//         console.log(`Student ${user.id} registered for event ${eventId}`);
-//     };
-
-//     const handleUnregister = (eventId) => {
-//         // Unregistration logic (DELETE to /api/events/register/eventId)
-//         setRegisteredEvents(prev => prev.filter(id => id !== eventId));
-//         console.log(`Student ${user.id} unregistered from event ${eventId}`);
-//     };
-
-//     const getRegistrationButton = (event) => {
-//         if (event.status === 'Closed') {
-//             return (
-//                 <span className="text-sm px-3 py-1 bg-red-100 text-red-700 rounded-full font-medium">
-//                     Closed / Full
-//                 </span>
-//             );
-//         }
-//         if (event.status === 'Cancelled') {
-//              return (
-//                 <span className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded-full font-medium">
-//                     Cancelled
-//                 </span>
-//             );
-//         }
-//         if (isRegistered(event.id)) {
-//             return (
-//                 <DashboardButton onClick={() => handleUnregister(event.id)} color="red" className="!bg-red-500 hover:!bg-red-600">
-//                     Unregister
-//                 </DashboardButton>
-//             );
-//         }
-//         return (
-//             <DashboardButton onClick={() => handleRegister(event.id)} color="indigo">
-//                 Register
-//             </DashboardButton>
-//         );
-//     };
-
-//     return (
-//         <div className="bg-white p-6 rounded-xl shadow-lg">
-//             <h3 className="text-2xl font-semibold text-gray-700 mb-6 flex items-center space-x-2">
-//                 <Users className="w-6 h-6 text-indigo-500" />
-//                 <span>Available Events</span>
-//             </h3>
-//             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-//                 {events.map((event) => (
-//                     <div 
-//                         key={event.id} 
-//                         className={`p-5 rounded-xl border-2 transition duration-300 ${isRegistered(event.id) ? 'border-indigo-400 bg-indigo-50 shadow-md' : 'border-gray-200 hover:shadow-lg'}`}
-//                     >
-//                         <div className="flex justify-between items-start">
-//                             <h4 className="text-lg font-bold text-gray-800 mb-1">{event.title}</h4>
-//                             <Calendar className="w-5 h-5 text-gray-500" />
-//                         </div>
-//                         <p className="text-sm text-gray-600 mb-2">
-//                             <span className="font-semibold">Date:</span> {event.date}
-//                         </p>
-//                         <p className="text-sm text-gray-600 mb-4">
-//                             <span className="font-semibold">Slots:</span> {event.capacity - event.registered} available
-//                         </p>
-//                         <div className="flex justify-end">
-//                             {getRegistrationButton(event)}
-//                         </div>
-//                     </div>
-//                 ))}
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default Events;

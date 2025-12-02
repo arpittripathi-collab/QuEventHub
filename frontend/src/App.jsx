@@ -70,6 +70,7 @@ import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Admin from "./pages/Admin";
+import ClubDashboard from "./pages/ClubDashboard";
 import ClubDetails from "./pages/ClubDetails";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -114,6 +115,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club"
+              element={
+                <ProtectedRoute>
+                  <ClubDashboard />
                 </ProtectedRoute>
               }
             />

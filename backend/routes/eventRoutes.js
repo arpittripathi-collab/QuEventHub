@@ -13,16 +13,34 @@
 
 
 import express from 'express';
-import { getEvents, registerForEvent, getMyEvents } from '../controllers/eventController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import {
+  getEvents,
+  registerForEvent,
+  getMyEvents,
+  createClubEvent,
+  getClubEvents,
+  updateClubEvent,
+  deleteClubEvent,
+  getClubEventRegistrations,
+  markAttendance,
+} from '../controllers/eventController.js';
+import { protect, requireClub } from '../middleware/authMiddleware.js';
 import Event from '../models/Event.js';
 
 const router = express.Router();
 
-// Get all events (public route, no auth required)
+// Public events
 router.get('/', getEvents);
 
-// Get single event by ID (public route)
+// Club-managed events (club auth required)
+router.get('/club', protect, requireClub, getClubEvents);
+router.post('/club', protect, requireClub, createClubEvent);
+router.put('/club/:id', protect, requireClub, updateClubEvent);
+router.delete('/club/:id', protect, requireClub, deleteClubEvent);
+router.get('/club/:id/registrations', protect, requireClub, getClubEventRegistrations);
+router.post('/club/:id/attendance/:registrationId', protect, requireClub, markAttendance);
+
+// Single event by ID (public)
 router.get('/:id', async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -35,10 +53,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Register for event (protected route)
+// Student/user registration routes
 router.post('/register', protect, registerForEvent);
-
-// Get user's registered events (protected route)
 router.get('/myevents', protect, getMyEvents);
 
 export default router;

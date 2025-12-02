@@ -6,6 +6,8 @@ import authRoute from './routes/authRoutes.js';
 import eventRoute from './routes/eventRoutes.js';
 import userRoute from './routes/userRoutes.js';
 import contactRoute from './routes/contactRoutes.js';
+import clubRoute from './routes/clubRoutes.js';
+import adminRoute from './routes/adminRoutes.js';
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -44,7 +46,8 @@ app.use('/api/auth', authRoute);
 app.use('/api/events', eventRoute);
 app.use('/api/user', userRoute);
 app.use('/api/contact', contactRoute);
-//app.use("/api/clubs", clubRoutes);
+app.use('/api/clubs', clubRoute);
+app.use('/api/admin', adminRoute);
 
 // Connect to database first, then start server
 const startServer = async () => {

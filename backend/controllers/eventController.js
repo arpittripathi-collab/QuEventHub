@@ -7,7 +7,7 @@ export const getEvents = async (req, res) => {
     
     const query = {
 
-      registrationDeadline: { $gte: new Date() } 
+//      registrationDeadline: { $gte: new Date() } 
     };
 
     if (category) {
@@ -23,6 +23,145 @@ export const getEvents = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// --- Club-managed events ---
+
+export const createClubEvent = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'club') {
+      return res.status(403).json({ success: false, message: 'Only clubs can create events' });
+    }
+
+    const payload = {
+      title: req.body.title,
+      description: req.body.description,
+      date: req.body.date,
+      time: req.body.time,
+      venue: req.body.venue,
+      registrationDeadline: req.body.registrationDeadline || req.body.date,
+      category: req.body.category,
+      isPaid: !!req.body.isPaid,
+      price: req.body.price || 0,
+      paymentQrCode: req.body.paymentQrCode,
+      imageUrl: req.body.imageUrl,
+      capacity: req.body.capacity || 0,
+      organizer: req.club?.name || 'Club Event',
+      club: req.user._id,
+    };
+
+    const event = await Event.create(payload);
+    res.status(201).json({ success: true, data: event });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const getClubEvents = async (req, res) => {
+  try {
+    const events = await Event.find({ club: req.user._id }).sort({ date: 1 });
+    res.status(200).json({ success: true, count: events.length, data: events });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateClubEvent = async (req, res) => {
+  try {
+    const event = await Event.findOne({ _id: req.params.id, club: req.user._id });
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found for this club' });
+    }
+
+    Object.assign(event, req.body);
+    await event.save();
+
+    res.status(200).json({ success: true, data: event });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteClubEvent = async (req, res) => {
+  try {
+    const deleted = await Event.findOneAndDelete({ _id: req.params.id, club: req.user._id });
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Event not found for this club' });
+    }
+    res.status(200).json({ success: true, message: 'Event deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getClubEventRegistrations = async (req, res) => {
+  try {
+    const event = await Event.findOne({ _id: req.params.id, club: req.user._id });
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found for this club' });
+    }
+
+    const regs = await Registration.find({ event: event._id })
+      .populate('user', 'name email q_id course section year')
+      .sort({ registeredAt: 1 });
+
+    res.status(200).json({
+      success: true,
+      count: regs.length,
+      data: regs,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const markAttendance = async (req, res) => {
+  try {
+    const event = await Event.findOne({ _id: req.params.id, club: req.user._id });
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found for this club' });
+    }
+
+    const now = new Date();
+    const eventDate = new Date(event.date);
+
+    const isSameDay =
+      now.getFullYear() === eventDate.getFullYear() &&
+      now.getMonth() === eventDate.getMonth() &&
+      now.getDate() === eventDate.getDate();
+
+    if (!isSameDay) {
+      return res.status(400).json({
+        success: false,
+        message: 'Attendance can only be marked on the event day',
+      });
+    }
+
+    const registration = await Registration.findOne({
+      _id: req.params.registrationId,
+      event: event._id,
+    });
+
+    if (!registration) {
+      return res.status(404).json({ success: false, message: 'Registration not found' });
+    }
+
+    if (registration.attended) {
+      return res.status(400).json({ success: false, message: 'Attendance already marked' });
+    }
+
+    registration.attended = true;
+    registration.attendedAt = now;
+    await registration.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Attendance marked successfully',
+      data: registration,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

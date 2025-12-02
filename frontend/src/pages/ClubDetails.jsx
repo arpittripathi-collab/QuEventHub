@@ -1,69 +1,119 @@
-// src/pages/ClubDetails.jsx
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../api"; // axios instance
-// import { AuthContext } from "../context/AuthContext";
-import { Loader2, Calendar, MapPin, Clock } from "lucide-react";
+import api from "../api";
+import { Loader2, Calendar, MapPin, Clock, Users } from "lucide-react";
 
 const ClubDetails = () => {
   const { id } = useParams();
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { idToken, user } = useContext(AuthContext);
+  const [joining, setJoining] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get(`/clubs/${id}`);
-        setClub(res.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetchClub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const handleJoin = async () => {
-    if (!user) {
-      alert("Please login to join.");
-      navigate("/login");
-      return;
-    }
+  const fetchClub = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const res = await api.post(`/clubs/${id}/join`, {}, { headers: { Authorization: `Bearer ${idToken}` } });
-      alert(res.data.message || "Joined club");
-      // optionally update UI or redirect to members or profile
+      const res = await api.get(`/clubs/${id}`);
+      setClub(res.data.data || res.data);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Could not join club");
+      setError("Unable to load club information. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <div className="p-8 text-center"><Loader2 className="animate-spin mx-auto" /></div>;
-  if (!club) return <div className="p-8 text-center">Club not found</div>;
+  const handleJoin = async () => {
+    if (!localStorage.getItem("token")) {
+      alert("Please login to join.");
+      navigate("/login", { state: { from: `/clubs/${id}` } });
+      return;
+    }
+    try {
+      setJoining(true);
+      const res = await api.post(`/clubs/${id}/join`);
+      alert(res.data.message || "Joined club");
+      fetchClub();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Could not join club");
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="animate-spin mx-auto text-purple-600" />
+      </div>
+    );
+  }
+
+  if (!club) {
+    return <div className="p-8 text-center">{error || "Club not found"}</div>;
+  }
+
+  const imageSrc = club.imageUrl || club.image?.path;
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
-      {club.image && <img src={club.image.path} alt={club.name} className="w-full h-64 object-cover rounded-lg mb-6" />}
+      {imageSrc && (
+        <img
+          src={imageSrc}
+          alt={club.name}
+          className="w-full h-64 object-cover rounded-lg mb-6"
+        />
+      )}
       <h1 className="text-3xl font-bold mb-2">{club.name}</h1>
-      <p className="text-sm text-gray-500 mb-4">Category: {club.category}</p>
+      <p className="text-sm text-gray-500 mb-4 capitalize">
+        Category: {club.category}
+      </p>
 
       <div className="grid md:grid-cols-3 gap-4 mb-4 text-gray-700">
-        <div className="flex items-center gap-2"><Calendar /> <span>{club.meeting || "TBD"}</span></div>
-        <div className="flex items-center gap-2"><Clock /> <span>{club.time || "TBD"}</span></div>
-        <div className="flex items-center gap-2"><MapPin /> <span>{club.venue || "TBD"}</span></div>
+        <div className="flex items-center gap-2">
+          <Calendar /> <span>{club.meeting || "TBD"}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock /> <span>{club.time || "TBD"}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <MapPin /> <span>{club.venue || "TBD"}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+        <Users size={18} className="text-purple-600" />
+        <span>
+          {club.members?.length || club.membersCount || 0} active members
+        </span>
       </div>
 
       <div className="prose mb-6">{club.description}</div>
 
-      <div className="flex gap-4">
-        <button onClick={handleJoin} className="bg-purple-600 text-white px-4 py-2 rounded">
+      <div className="flex gap-4 flex-wrap">
+        <button
+          onClick={handleJoin}
+          disabled={joining}
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition flex items-center gap-2 disabled:opacity-60"
+        >
+          {joining && <Loader2 size={18} className="animate-spin" />}
           Join Club
         </button>
 
-        <button onClick={() => navigate("/clubs")} className="px-4 py-2 border rounded">Back</button>
+        <button
+          onClick={() => navigate("/clubs")}
+          className="px-4 py-2 border rounded hover:bg-gray-50 transition"
+        >
+          Back
+        </button>
       </div>
     </div>
   );

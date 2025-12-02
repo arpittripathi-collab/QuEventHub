@@ -1,138 +1,270 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import api from "../api";
-import { Loader2, Calendar, MapPin, Clock } from "lucide-react";
+import { 
+  Loader2, 
+  Calendar, 
+  MapPin, 
+  Clock, 
+  Search, 
+  Users, 
+  ArrowRight,
+  Filter
+} from "lucide-react";
+
+const categoryFilters = ["all", "technical", "cultural", "sports", "arts", "music"];
 
 const Clubs = () => {
   const [clubs, setClubs] = useState([]);
   const [filteredClubs, setFilteredClubs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [joinLoadingId, setJoinLoadingId] = useState(null);
+  const [feedback, setFeedback] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();
   const { search } = useLocation();
   const category = new URLSearchParams(search).get("type") || "all";
 
-/////
-<Link to={`/clubs/${club.id || club._id}`}>View Details</Link>
-
-
+  // Initial Fetch
   useEffect(() => {
     fetchClubs();
   }, []);
 
+  // Filter Logic (Category + Search)
   useEffect(() => {
-    filterClubs();
-  }, [clubs, category]);
+    let result = clubs;
+
+    // 1. Filter by Category
+    if (category !== "all") {
+      result = result.filter(
+        (club) => club.category?.toLowerCase() === category.toLowerCase()
+      );
+    }
+
+    // 2. Filter by Search Term
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      result = result.filter(club => 
+        club.name.toLowerCase().includes(lowerSearch) || 
+        club.description?.toLowerCase().includes(lowerSearch)
+      );
+    }
+
+    setFilteredClubs(result);
+  }, [clubs, category, searchTerm]);
 
   const fetchClubs = async () => {
     setLoading(true);
+    setFeedback("");
     try {
       const res = await api.get("/clubs");
-      setClubs(res.data.data);
+      const fetchedClubs = res.data.data || res.data || [];
+      setClubs(fetchedClubs);
+      setFilteredClubs(fetchedClubs);
     } catch (error) {
       console.error("Error fetching clubs:", error);
+      setFeedback("Unable to load clubs right now. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
 
-  const filterClubs = () => {
-    if (category === "all") {
-      setFilteredClubs(clubs);
-    } else {
-      setFilteredClubs(clubs.filter((club) =>
-        club.category?.toLowerCase() === category.toLowerCase()
-      ));
-    }
-  };
+  const handleJoinClub = async (e, clubId) => {
+    e.preventDefault(); // Prevent Link navigation if inside a Link
+    e.stopPropagation();
 
-  const handleJoinClub = (clubId) => {
     if (!localStorage.getItem("token")) {
       alert("Please login to join a club.");
-      navigate("/login");
+      navigate("/login", { state: { from: `/clubs/${clubId}` } });
       return;
     }
-    alert(`Join request sent for Club ID: ${clubId}`);
+
+    try {
+      setJoinLoadingId(clubId);
+      const res = await api.post(`/clubs/${clubId}/join`);
+      setFeedback(res.data.message || "Joined club successfully!");
+      // Optional: Refetch to update member counts if your API returns that
+      fetchClubs();
+      
+      // Clear feedback after 3 seconds
+      setTimeout(() => setFeedback(""), 3000);
+    } catch (error) {
+      const status = error.response?.status;
+      const message = error.response?.data?.message || "Could not join club.";
+      if (status === 401) {
+        navigate("/login", { state: { from: `/clubs/${clubId}` } });
+      } else {
+        setFeedback(message);
+      }
+    } finally {
+      setJoinLoadingId(null);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-6">
-      <h1 className="text-4xl font-bold text-center mb-8 text-purple-700">
-        Campus Clubs
-      </h1>
-
-      {/* FILTER TABS */}
-      <div className="flex justify-center mb-10 space-x-4">
-        {["all", "technical", "cultural", "sports", "arts", "music"].map((cat) => (
-          <button
-            key={cat}
-            onClick={() => navigate(`/clubs?type=${cat}`)}
-            className={`px-4 py-2 rounded-full border ${
-              category === cat
-                ? "bg-purple-600 text-white"
-                : "bg-white text-gray-700"
-            }`}
-          >
-            {cat.charAt(0).toUpperCase() + cat.slice(1)}
-          </button>
-        ))}
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      
+      {/* Page Header */}
+      <div className="text-center mb-12 mt-5">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
+          Campus <span className="text-purple-600">Clubs</span> & Communities
+        </h1>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Find your tribe. Join a community that shares your passion, from coding to creativity.
+        </p>
       </div>
 
-      {/* CLUB CARDS */}
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          <div className="col-span-3 text-center py-10">
-            <Loader2 size={36} className="animate-spin text-purple-500 mx-auto" />
-            <p className="mt-2 text-gray-600">Loading clubs...</p>
-          </div>
-        ) : filteredClubs.length === 0 ? (
-          <div className="col-span-3 text-center py-10 text-gray-500">
-            No clubs found in this category.
-          </div>
-        ) : (
-          filteredClubs.map((club) => (
-            <div
-              key={club._id}
-              className="bg-white shadow-lg rounded-xl p-6 flex flex-col hover:shadow-2xl transition"
-            >
-              {club.image && (
-                <img
-                  src={club.image.path}
-                  alt={club.name}
-                  className="w-full h-40 object-cover rounded-lg mb-4"
-                />
-              )}
+      {/* Global Feedback Toast (if any) */}
+      {feedback && (
+        <div className="fixed top-24 right-5 z-50 bg-purple-600 text-white px-6 py-3 rounded-lg shadow-xl animate-fade-in-down">
+          {feedback}
+        </div>
+      )}
 
-              <h2 className="text-2xl font-semibold text-gray-800">{club.name}</h2>
-
-              <div className="mt-3 text-sm text-gray-600 space-y-1">
-                <p className="flex items-center gap-2">
-                  <Calendar size={16} className="text-purple-500" />
-                  <span className="font-semibold">Meeting:</span> {club.meeting}
-                </p>
-                <p className="flex items-center gap-2">
-                  <Clock size={16} className="text-purple-500" />
-                  <span className="font-semibold">Time:</span> {club.time}
-                </p>
-                <p className="flex items-center gap-2">
-                  <MapPin size={16} className="text-purple-500" />
-                  <span className="font-semibold">Venue:</span> {club.venue}
-                </p>
-              </div>
-
-              <p className="mt-4 text-gray-700 line-clamp-3 flex-1">
-                {club.description}
-              </p>
-
-              <button
-                onClick={() => handleJoinClub(club._id)}
-                className="mt-5 w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
-              >
-                Join Club
-              </button>
+      {/* Search and Filter Section */}
+      <div className="max-w-7xl mx-auto mb-12 space-y-6">
+        
+        {/* Search Bar */}
+        <div className="relative max-w-lg mx-auto">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
             </div>
-          ))
+            <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-full leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-sm transition-all"
+                placeholder="Search clubs by name or interest..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+        </div>
+
+        {/* Category Chips */}
+        <div className="flex flex-wrap justify-center gap-2">
+            {categoryFilters.map((cat) => (
+                <button
+                    key={cat}
+                    onClick={() => navigate(`/clubs?type=${cat}`)}
+                    className={`px-5 py-2 rounded-full text-sm font-medium transition-all transform hover:scale-105 capitalize ${
+                        category === cat
+                            ? "bg-purple-600 text-white shadow-md ring-2 ring-purple-600 ring-offset-2"
+                            : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                    }`}
+                >
+                    {cat}
+                </button>
+            ))}
+        </div>
+      </div>
+
+      {/* Clubs Grid */}
+      <div className="max-w-7xl mx-auto">
+        {loading ? (
+           <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 size={48} className="animate-spin text-purple-600 mb-4" />
+                <p className="text-gray-500 font-medium">Loading communities...</p>
+           </div>
+        ) : filteredClubs.length === 0 ? (
+           <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border border-gray-100 p-10">
+                <div className="bg-gray-100 p-4 rounded-full mb-4">
+                    <Filter className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">No clubs found</h3>
+                <p className="text-gray-500 max-w-sm mb-6">
+                    We couldn't find any clubs matching your criteria. Try selecting a different category.
+                </p>
+                <button 
+                    onClick={() => { setSearchTerm(""); navigate("/clubs?type=all"); }}
+                    className="text-purple-600 font-medium hover:underline"
+                >
+                    View all clubs
+                </button>
+           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredClubs.map((club) => {
+              const imageSrc = club.imageUrl || club.image?.path;
+              
+              return (
+                <div
+                  key={club._id}
+                  className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full"
+                >
+                  {/* Image Header */}
+                  <div className="relative h-48 bg-gray-100 overflow-hidden">
+                    {imageSrc ? (
+                      <img
+                        src={imageSrc}
+                        alt={club.name}
+                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                        <Users className="text-white/30 w-16 h-16" />
+                      </div>
+                    )}
+                    
+                    {/* Category Badge */}
+                    <div className="absolute top-4 left-4">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white backdrop-blur-md uppercase tracking-wider">
+                            {club.category || "General"}
+                        </span>
+                    </div>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-6 flex flex-col flex-grow">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-purple-700 transition-colors">
+                      {club.name}
+                    </h2>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 mr-2 text-purple-500" />
+                        <span className="truncate">{club.meeting || "Meeting TBD"}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                         <Clock className="w-4 h-4 mr-2 text-purple-500" />
+                         <span>{club.time || "Time TBD"}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <MapPin className="w-4 h-4 mr-2 text-pink-500" />
+                        <span className="truncate">{club.venue || "Venue TBD"}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-gray-600 text-sm line-clamp-3 mb-6 flex-grow">
+                      {club.description}
+                    </p>
+
+                    {/* Action Footer */}
+                    <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-3 mt-auto">
+                      <Link
+                        to={`/clubs/${club._id}`}
+                        className="flex items-center justify-center w-full py-2.5 bg-gray-50 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        View Details
+                      </Link>
+                      
+                      <button
+                        onClick={(e) => handleJoinClub(e, club._id)}
+                        disabled={joinLoadingId === club._id}
+                        className="flex items-center justify-center w-full py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {joinLoadingId === club._id ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <>
+                            Join <ArrowRight size={16} className="ml-1" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
